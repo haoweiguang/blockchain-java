@@ -1,6 +1,8 @@
 package me.light.core;
 
+import me.light.util.ByteUtils;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigInteger;
@@ -104,7 +106,11 @@ public class Block {
 			prevBlockHashBytes = new BigInteger(this.getPreviousHash(), 16).toByteArray();
 		}
 
+		byte[] headers = ByteUtils.merge(prevBlockHashBytes,
+				this.getData().getBytes(),
+				ByteUtils.toBytes(this.getTimeStamp()));
 
+		this.setHash(DigestUtils.sha256Hex(headers));
 	}
 
 
