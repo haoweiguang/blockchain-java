@@ -91,7 +91,6 @@ public class Block {
 	 * @return
 	 */
 	public static Block newBlock(String previousHash, String data) {
-
 		Block block = new Block(ZERO_HASH, previousHash, data, Instant.now().getEpochSecond());
 		block.setHash();
 		return block;
@@ -113,5 +112,14 @@ public class Block {
 		this.setHash(DigestUtils.sha256Hex(headers));
 	}
 
+
+	/**
+	 * 创世块
+	 *
+	 * @return
+	 */
+	public static Block newGenesisBlock() {
+		return Block.newBlock(ZERO_HASH, "Genesis Block");
+	}
 
 }
