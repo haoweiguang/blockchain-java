@@ -1,4 +1,4 @@
-package me.light.util;
+package me.light.blockchain.util;
 
 import org.apache.commons.lang3.ArrayUtils;
 

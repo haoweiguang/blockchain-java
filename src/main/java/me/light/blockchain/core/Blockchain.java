@@ -1,4 +1,4 @@
-package me.light.core;
+package me.light.blockchain.core;
 
 import java.util.ArrayList;
 import java.util.List;
