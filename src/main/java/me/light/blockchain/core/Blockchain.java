@@ -58,4 +58,11 @@ public class Blockchain {
 	public void addBlock(Block block) {
 		this.blockchain.add(block);
 	}
+
+	@Override
+	public String toString() {
+		return "Blockchain{" +
+				"blockchain=" + blockchain +
+				'}';
+	}
 }

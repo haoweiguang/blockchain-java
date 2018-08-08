@@ -11,6 +11,7 @@ public class BlockchainJavaApplicationTests {
 
 	@Test
 	public void contextLoads() {
+
 	}
 
 }
