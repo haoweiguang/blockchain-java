@@ -38,6 +38,11 @@ public class Block {
 	 */
 	private long timeStamp;
 
+	/**
+	 * 工作量证明计数器
+	 */
+	private long nonce;
+
 	public Block() {
 
 	}
@@ -82,6 +87,13 @@ public class Block {
 		this.timeStamp = timeStamp;
 	}
 
+	public long getNonce() {
+		return nonce;
+	}
+
+	public void setNonce(long nonce) {
+		this.nonce = nonce;
+	}
 
 	/**
 	 * 创建区块
@@ -92,7 +104,10 @@ public class Block {
 	 */
 	public static Block newBlock(String previousHash, String data) {
 		Block block = new Block(ZERO_HASH, previousHash, data, Instant.now().getEpochSecond());
+		ProofOfWork proofOfWork = ProofOfWork.newProofOfWork(block);
+		PowResult powResult = proofOfWork.run();
 		block.setHash();
+		block.setNonce(powResult.getNonce());
 		return block;
 	}
 
