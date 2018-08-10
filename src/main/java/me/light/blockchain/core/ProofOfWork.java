@@ -50,9 +50,6 @@ public class ProofOfWork {
 		this.target = target;
 	}
 
-//	运行挖矿
-//	验证结果
-
 	/**
 	 * 创建工作量证明
 	 *
