@@ -22,4 +22,23 @@ public class BlockchainTests {
 		blockchain.addBlock("jack send 0.1btc to lucy");
 	}
 
+	@Test
+	public void POWTest() {
+		Blockchain blockchain = Blockchain.newBlockChain();
+
+		blockchain.addBlock("Send 1 BTC to Ivan");
+		blockchain.addBlock("Send 2 more BTC to Ivan");
+
+		for (Block block : blockchain.getBlockchain()) {
+			System.out.println("Prev.hash: " + block.getPreviousHash());
+			System.out.println("Data: " + block.getData());
+			System.out.println("Hash: " + block.getHash());
+			System.out.println("Nonce: " + block.getNonce());
+
+			ProofOfWork pow = ProofOfWork.newProofOfWork(block);
+			System.out.println("Pow valid: " + pow.validate() + "\n");
+		}
+
+	}
+
 }
