@@ -59,6 +59,7 @@ public class ProofOfWork {
 	public static ProofOfWork newProofOfWork(Block block) {
 		BigInteger targetValue = BigInteger.ONE.shiftLeft((256 - TAGET_BITS));
 		return new ProofOfWork(block, targetValue);
+
 	}
 
 	/**
@@ -113,7 +114,7 @@ public class ProofOfWork {
 	 * @return
 	 */
 	public boolean validate() {
-		byte[] data = {};
+		byte[] data = this.prepare(this.block.getNonce());
 		return new BigInteger(DigestUtils.sha256Hex(data), 16).compareTo(this.target) == -1;
 	}
 
