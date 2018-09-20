@@ -11,34 +11,28 @@ import org.springframework.test.context.junit4.SpringRunner;
  * @author light.hao
  * @create 2018-08-08-14:30
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest
 public class BlockchainTests {
 
-	@Test
-	public void addBlock() {
-		Blockchain blockchain = Blockchain.newBlockChain();
-		blockchain.addBlock("alice send 0.5btc to jack");
-		blockchain.addBlock("jack send 0.1btc to lucy");
-	}
+	public static void main(String[] args) {
+		try {
+			Blockchain blockchain = Blockchain.newBlockChain();
 
-	@Test
-	public void POWTest() {
-		Blockchain blockchain = Blockchain.newBlockChain();
+			blockchain.addBlock("Send 1.0 BTC to light");
+			blockchain.addBlock("Send 2.5 more BTC to light");
+			blockchain.addBlock("Send 3.5 more BTC to light");
 
-		blockchain.addBlock("Send 1 BTC to Ivan");
-		blockchain.addBlock("Send 2 more BTC to Ivan");
+			for (Blockchain.BlockchainIterator iterator = blockchain.getBlockchainIterator(); iterator.hashNext(); ) {
+				Block block = iterator.next();
 
-		for (Block block : blockchain.getBlockchain()) {
-			System.out.println("Prev.hash: " + block.getPreviousHash());
-			System.out.println("Data: " + block.getData());
-			System.out.println("Hash: " + block.getHash());
-			System.out.println("Nonce: " + block.getNonce());
+				if (block != null) {
+					boolean validate = ProofOfWork.newProofOfWork(block).validate();
+					System.out.println(block.toString() + ", validate = " + validate);
+				}
+			}
 
-			ProofOfWork pow = ProofOfWork.newProofOfWork(block);
-			System.out.println("Pow valid: " + pow.validate() + "\n");
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-
 	}
 
 }

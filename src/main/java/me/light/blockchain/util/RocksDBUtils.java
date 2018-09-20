@@ -52,6 +52,7 @@ public class RocksDBUtils {
 
 	private RocksDBUtils() {
 		openDB();
+		initBlockBucket();
 	}
 
 	/**

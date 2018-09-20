@@ -132,6 +132,10 @@ public class Blockchain {
 		}
 	}
 
+	public BlockchainIterator getBlockchainIterator() {
+		return new BlockchainIterator(lastBlockHash);
+	}
+
 	@Override
 	public String toString() {
 		return "Blockchain{" +
