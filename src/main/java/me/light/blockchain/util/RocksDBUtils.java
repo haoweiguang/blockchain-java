@@ -1,11 +1,10 @@
 package me.light.blockchain.util;
 
 import com.google.common.collect.Maps;
+import me.light.blockchain.core.Block;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
-import sun.plugin2.os.windows.FLASHWINFO;
 
-import javax.management.RuntimeErrorException;
 import java.util.Map;
 
 /**
@@ -113,6 +112,42 @@ public class RocksDBUtils {
 		return "";
 	}
 
+
+	/**
+	 * 保存区块
+	 *
+	 * @param block
+	 */
+	public void putBlock(Block block) {
+
+		try {
+			blocksBucket.put(block.getHash(), SerializeUtils.serialize(block));
+			db.put(SerializeUtils.serialize(BLOCKS_BUCKET_KEY), SerializeUtils.serialize(blocksBucket));
+		} catch (RocksDBException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 查询区块
+	 *
+	 * @param blockHash
+	 * @return
+	 */
+	public Block getBlock(String blockHash) {
+		return (Block) SerializeUtils.deserialize(blocksBucket.get(blockHash));
+	}
+
+	/**
+	 * 关闭数据库
+	 */
+	public void closeDB() {
+		try {
+			db.close();
+		} catch (Exception e) {
+			throw new RuntimeException("Fail to close db ! ", e);
+		}
+	}
 
 
 }
