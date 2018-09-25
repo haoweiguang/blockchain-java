@@ -48,6 +48,25 @@
 			<version>3.7</version>
 		</dependency>
 
+		<!--RocksDB-->
+		<dependency>
+			<groupId>org.rocksdb</groupId>
+			<artifactId>rocksdbjni</artifactId>
+			<version>5.14.2</version>
+		</dependency>
+
+		<!--序列和反序列-->
+		<dependency>
+			<groupId>com.esotericsoftware.kryo</groupId>
+			<artifactId>kryo</artifactId>
+			<version>2.24.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.google-collections</groupId>
+			<artifactId>google-collect</artifactId>
+			<version>snapshot-20080530</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
