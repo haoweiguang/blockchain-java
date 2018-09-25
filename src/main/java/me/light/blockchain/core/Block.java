@@ -29,9 +29,9 @@ public class Block {
 	private String previousHash;
 
 	/**
-	 * 区块中的数据（现在是做的简化）
+	 * 区块中的交易
 	 */
-	private String data;
+	private Transaction[] transactions;
 
 	/**
 	 * 区块创建的时间
@@ -47,11 +47,11 @@ public class Block {
 
 	}
 
-	public Block(String hash, String previousHash, String data, long timeStamp) {
+	public Block(String hash, String previousHash, Transaction[] transactions, long timeStamp) {
 		this();
 		this.hash = hash;
 		this.previousHash = previousHash;
-		this.data = data;
+		this.transactions = transactions;
 		this.timeStamp = timeStamp;
 	}
 
@@ -71,12 +71,12 @@ public class Block {
 		this.previousHash = previousHash;
 	}
 
-	public String getData() {
-		return data;
+	public Transaction[] getTransactions() {
+		return transactions;
 	}
 
-	public void setData(String data) {
-		this.data = data;
+	public void setTransactions(Transaction[] transactions) {
+		this.transactions = transactions;
 	}
 
 	public long getTimeStamp() {
@@ -95,18 +95,19 @@ public class Block {
 		this.nonce = nonce;
 	}
 
+
 	/**
 	 * 创建区块
 	 *
 	 * @param previousHash
-	 * @param data
+	 * @param transactions
 	 * @return
 	 */
-	public static Block newBlock(String previousHash, String data) {
-		Block block = new Block(ZERO_HASH, previousHash, data, Instant.now().getEpochSecond());
+	public static Block newBlock(String previousHash, Transaction[] transactions) {
+		Block block = new Block(ZERO_HASH, previousHash, transactions, Instant.now().getEpochSecond());
 		ProofOfWork proofOfWork = ProofOfWork.newProofOfWork(block);
 		PowResult powResult = proofOfWork.run();
-		block.setHash();
+		block.setHash(powResult.getHash());
 		block.setNonce(powResult.getNonce());
 		return block;
 	}
@@ -121,7 +122,7 @@ public class Block {
 		}
 
 		byte[] headers = ByteUtils.merge(prevBlockHashBytes,
-				this.getData().getBytes(),
+				this.hashTransaction(),
 				ByteUtils.toBytes(this.getTimeStamp()));
 
 		this.setHash(DigestUtils.sha256Hex(headers));
@@ -129,12 +130,27 @@ public class Block {
 
 
 	/**
+	 * 对区块中的交易信息进行Hash计算
+	 *
+	 * @return
+	 */
+	public byte[] hashTransaction() {
+
+		byte[][] transactionIdArrays = new byte[this.getTransactions().length][];
+		for (int i = 0; i < this.getTransactions().length; i++) {
+			transactionIdArrays[i] = this.getTransactions()[i].getTransactionId();
+		}
+		return DigestUtils.sha256(ByteUtils.merge(transactionIdArrays));
+	}
+
+	/**
 	 * 创世块
 	 *
 	 * @return
 	 */
-	public static Block newGenesisBlock() {
-		return Block.newBlock(ZERO_HASH, "Genesis Block");
+	public static Block newGenesisBlock(Transaction coinbase) {
+
+		return Block.newBlock(ZERO_HASH, new Transaction[]{coinbase});
 	}
 
 }
