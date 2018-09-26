@@ -46,6 +46,21 @@ public class Blockchain {
 		this.blockchain = blockchain;
 	}
 
+
+	/**
+	 * 从DB恢复区块链数据
+	 *
+	 * @return
+	 * @throws Exception
+	 */
+	public static Blockchain initBlockchainFromDB() throws Exception {
+		String lastBlockHash = RocksDBUtils.getInstance().getLastBlockHash();
+		if (lastBlockHash == null) {
+			throw new Exception("ERROR: Fail to init blockchain from db. ");
+		}
+		return new Blockchain(lastBlockHash);
+	}
+
 	/**
 	 * 生成区块链
 	 *
@@ -79,6 +94,20 @@ public class Blockchain {
 			throw new Exception("Fail to add block into blockchain ! ");
 		}
 		this.addBlock(Block.newBlock(lastBlockHash, transactions));
+	}
+
+	/**
+	 * 打包交易，进行挖矿
+	 *
+	 * @param transactions
+	 */
+	public void mineBlock(Transaction[] transactions) throws Exception {
+		String lastBlockHash = RocksDBUtils.getInstance().getLastBlockHash();
+		if (lastBlockHash == null) {
+			throw new Exception("ERROR: Fail to get last block hash ! ");
+		}
+		Block block = Block.newBlock(lastBlockHash, transactions);
+		this.addBlock(block);
 	}
 
 	/**
@@ -238,6 +267,8 @@ public class Blockchain {
 		}
 		return utxos;
 	}
+
+
 
 
 	@Override
