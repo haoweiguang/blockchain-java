@@ -18,7 +18,6 @@ import java.util.Map;
  */
 public class Blockchain {
 
-	List<Block> blockchain;
 	private String lastBlockHash;
 
 
@@ -29,23 +28,6 @@ public class Blockchain {
 	public String getLastBlockHash() {
 		return lastBlockHash;
 	}
-
-	public void setLastBlockHash(String lastBlockHash) {
-		this.lastBlockHash = lastBlockHash;
-	}
-
-	public List<Block> getBlockchain() {
-		return blockchain;
-	}
-
-	public Blockchain(List<Block> blocks) {
-		this.blockchain = blocks;
-	}
-
-	public void setBlockchain(List<Block> blockchain) {
-		this.blockchain = blockchain;
-	}
-
 
 	/**
 	 * 从DB恢复区块链数据
@@ -267,16 +249,4 @@ public class Blockchain {
 		}
 		return utxos;
 	}
-
-
-
-
-	@Override
-	public String toString() {
-		return "Blockchain{" +
-				"blockchain=" + blockchain +
-				'}';
-	}
-
-
 }

@@ -14,7 +14,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class BlockchainTests {
 
 	public static void main(String[] args) throws Exception {
-		String address = "weiguang";
+		String address = "light";
 		Blockchain blockchain = Blockchain.newBlockChain(address);
 		TransactionOutput[] outputs = blockchain.findUTXO(address);
 		int balance = 0;
