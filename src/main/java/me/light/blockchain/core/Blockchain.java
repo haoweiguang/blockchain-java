@@ -13,7 +13,6 @@ import java.util.List;
  * @create 2018-08-07-17:12
  */
 public class Blockchain {
-	List<Block> blockchain;
 	private String lastBlockHash;
 
 
@@ -23,22 +22,6 @@ public class Blockchain {
 
 	public String getLastBlockHash() {
 		return lastBlockHash;
-	}
-
-	public void setLastBlockHash(String lastBlockHash) {
-		this.lastBlockHash = lastBlockHash;
-	}
-
-	public List<Block> getBlockchain() {
-		return blockchain;
-	}
-
-	public Blockchain(List<Block> blocks) {
-		this.blockchain = blocks;
-	}
-
-	public void setBlockchain(List<Block> blockchain) {
-		this.blockchain = blockchain;
 	}
 
 	/**
@@ -136,10 +119,4 @@ public class Blockchain {
 		return new BlockchainIterator(lastBlockHash);
 	}
 
-	@Override
-	public String toString() {
-		return "Blockchain{" +
-				"blockchain=" + blockchain +
-				'}';
-	}
 }
