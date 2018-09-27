@@ -2,8 +2,13 @@ package me.light.blockchain.core;
 
 
 import me.light.blockchain.util.SerializeUtils;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * 交易
@@ -55,6 +60,10 @@ public class Transaction {
 		this.outputs = outputs;
 	}
 
+
+	public Transaction() {
+	}
+
 	public Transaction(byte[] transactionId, TransactionInput[] inputs, TransactionOutput[] outputs) {
 		this.transactionId = transactionId;
 		this.inputs = inputs;
@@ -72,7 +81,7 @@ public class Transaction {
 	 * @param to   收账的钱包地址
 	 * @return
 	 */
-	public static Transaction newCoinbaseTransaction(String data, String to) {
+	public static Transaction newCoinbaseTransaction(String to, String data) {
 
 		if (StringUtils.isBlank(data)) {
 			data = String.format("Reward to '%s'", to);
@@ -102,6 +111,50 @@ public class Transaction {
 		return this.getInputs().length == 1
 				&& this.getInputs()[0].getTransactionId().length == 0
 				&& this.getInputs()[0].getTransactionOutputIndex() == -1;
+	}
+
+
+	/**
+	 * 创建一笔交易
+	 *
+	 * @param from       支付地址
+	 * @param to         收款地址
+	 * @param amount     交易金额
+	 * @param blockchain 区块链
+	 * @return
+	 */
+	public static Transaction newTransaction(String from, String to, int amount, Blockchain blockchain) throws Exception {
+		SpendableOutputResult outputResult = blockchain.findSpendableOutputs(from, amount);
+		int accumulated = outputResult.getAccumulated();
+		Map<String, int[]> unspentOutputs = outputResult.getUnspentOutputs();
+
+		if (accumulated < amount) {
+			throw new Exception("ERROR: Not enough funds");
+		}
+
+		Iterator<Map.Entry<String, int[]>> iterator = unspentOutputs.entrySet().iterator();
+
+		TransactionInput[] inputs = {};
+		while (iterator.hasNext()) {
+			Map.Entry<String, int[]> entry = iterator.next();
+			String transactionIdStr = entry.getKey();
+			int[] outputIds = entry.getValue();
+			byte[] transactionId = Hex.decodeHex(transactionIdStr.toCharArray());
+			for (int outputIndex : outputIds) {
+				inputs = ArrayUtils.add(inputs, new TransactionInput(transactionId, outputIndex, from));
+			}
+		}
+
+		TransactionOutput[] outputs = {};
+		outputs = ArrayUtils.add(outputs, new TransactionOutput(amount, to));
+		if (accumulated > amount) {
+			outputs = ArrayUtils.add(outputs, new TransactionOutput((accumulated - amount), from));
+		}
+
+		Transaction transaction = new Transaction(null, inputs, outputs);
+		transaction.setTransactionId();
+
+		return transaction;
 	}
 
 

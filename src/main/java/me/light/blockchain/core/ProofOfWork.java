@@ -17,7 +17,7 @@ public class ProofOfWork {
 	/**
 	 * 难度目标位
 	 */
-	private static final int TAGET_BITS = 26;
+	private static final int TAGET_BITS = 20;
 
 	/**
 	 * 区块

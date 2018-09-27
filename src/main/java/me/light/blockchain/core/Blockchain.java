@@ -52,7 +52,7 @@ public class Blockchain {
 		String lastBlockHash = RocksDBUtils.getInstance().getLastBlockHash();
 		if (StringUtils.isBlank(lastBlockHash)) {
 			//创建coinbase交易
-			Transaction coinbaseTransaction = Transaction.newCoinbaseTransaction("", address);
+			Transaction coinbaseTransaction = Transaction.newCoinbaseTransaction(address, "");
 			Block genesisBlock = Block.newGenesisBlock(coinbaseTransaction);
 			lastBlockHash = genesisBlock.getHash();
 			RocksDBUtils.getInstance().putBlock(genesisBlock);
@@ -249,4 +249,40 @@ public class Blockchain {
 		}
 		return utxos;
 	}
+
+	/**
+	 * 查找能够花费的交易输出
+	 *
+	 * @param address 钱包地址
+	 * @param amount  支付金额
+	 * @return
+	 */
+	public SpendableOutputResult findSpendableOutputs(String address, int amount) throws Exception {
+		Transaction[] unspentTransactions = this.findUnspentTransactions(address);
+		int accumulated = 0;
+
+		Map<String, int[]> unspentOutputs = new HashMap<>();
+		for (Transaction transaction : unspentTransactions) {
+			String transactionId = Hex.encodeHexString(transaction.getTransactionId());
+			for (int outputIndex = 0; outputIndex < transaction.getOutputs().length; outputIndex++) {
+				TransactionOutput output = transaction.getOutputs()[outputIndex];
+				if (output.canUnlockOutputWith(address) && accumulated < amount) {
+					accumulated += output.getValue();
+				}
+
+				int[] outIndexs = unspentOutputs.get(transactionId);
+				if (outIndexs == null) {
+					outIndexs = new int[]{outputIndex};
+				} else {
+					outIndexs = ArrayUtils.add(outIndexs, outputIndex);
+				}
+				unspentOutputs.put(transactionId, outIndexs);
+				if (accumulated >= amount) {
+					break;
+				}
+			}
+		}
+		return new SpendableOutputResult(accumulated, unspentOutputs);
+	}
+
 }

@@ -35,6 +35,9 @@ public class TransactionOutput {
 		this.scriptPubKey = scriptPubKey;
 	}
 
+	public TransactionOutput() {
+	}
+
 	public TransactionOutput(int value, String scriptPubKey) {
 		this.value = value;
 		this.scriptPubKey = scriptPubKey;

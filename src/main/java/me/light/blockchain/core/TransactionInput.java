@@ -48,6 +48,9 @@ public class TransactionInput {
 	}
 
 
+	public TransactionInput() {
+	}
+
 	public TransactionInput(byte[] transactionId, int transactionOutputIndex, String scriptSig) {
 		this.transactionId = transactionId;
 		this.transactionOutputIndex = transactionOutputIndex;

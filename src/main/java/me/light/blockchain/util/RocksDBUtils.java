@@ -136,7 +136,11 @@ public class RocksDBUtils {
 	 * @return
 	 */
 	public Block getBlock(String blockHash) {
-		return (Block) SerializeUtils.deserialize(blocksBucket.get(blockHash));
+		byte[] block = blocksBucket.get(blockHash);
+		if (block != null) {
+			return (Block) SerializeUtils.deserialize(block);
+		}
+		return null;
 	}
 
 	/**

@@ -5,6 +5,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.time.Instant;
 
@@ -14,7 +15,7 @@ import java.time.Instant;
  * @author light.hao
  * @create 2018-08-07-16:42
  */
-public class Block {
+public class Block implements Serializable {
 
 	private static final String ZERO_HASH = Hex.encodeHexString(new byte[32]);
 
@@ -150,7 +151,7 @@ public class Block {
 	 */
 	public static Block newGenesisBlock(Transaction coinbase) {
 
-		return Block.newBlock(ZERO_HASH, new Transaction[]{coinbase});
+		return Block.newBlock("", new Transaction[]{coinbase});
 	}
 
 }
