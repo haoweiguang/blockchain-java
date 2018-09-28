@@ -17,7 +17,7 @@ public class ProofOfWork {
 	/**
 	 * 难度目标位
 	 */
-	private static final int TAGET_BITS = 26;
+	private static final int TAGET_BITS = 20;
 
 	/**
 	 * 区块
@@ -70,7 +70,7 @@ public class ProofOfWork {
 	public PowResult run() {
 		long nonce = 0;
 		String shaHex = "";
-		System.out.printf("Mining the block containing：%s \n", this.getBlock().getData());
+		System.out.printf("Mining the block containing：%s \n", this.getBlock().getTransactions());
 		long startTime = System.currentTimeMillis();
 		while (nonce < Long.MAX_VALUE) {
 			byte[] data = prepare(nonce);
@@ -101,7 +101,7 @@ public class ProofOfWork {
 
 		return ByteUtils.merge(
 				prevBlockHashBytes,
-				this.getBlock().getData().getBytes(),
+				this.getBlock().hashTransaction(),
 				ByteUtils.toBytes(this.getBlock().getTimeStamp()),
 				ByteUtils.toBytes(TAGET_BITS),
 				ByteUtils.toBytes(nonce)

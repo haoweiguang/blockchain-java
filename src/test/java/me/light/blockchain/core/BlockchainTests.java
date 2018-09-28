@@ -13,26 +13,17 @@ import org.springframework.test.context.junit4.SpringRunner;
  */
 public class BlockchainTests {
 
-	public static void main(String[] args) {
-		try {
-			Blockchain blockchain = Blockchain.newBlockChain();
-
-			blockchain.addBlock("Send 1.0 BTC to light");
-			blockchain.addBlock("Send 2.5 more BTC to light");
-			blockchain.addBlock("Send 3.5 more BTC to light");
-
-			for (Blockchain.BlockchainIterator iterator = blockchain.getBlockchainIterator(); iterator.hashNext(); ) {
-				Block block = iterator.next();
-
-				if (block != null) {
-					boolean validate = ProofOfWork.newProofOfWork(block).validate();
-					System.out.println(block.toString() + ", validate = " + validate);
-				}
+	public static void main(String[] args) throws Exception {
+		String address = "light";
+		Blockchain blockchain = Blockchain.newBlockChain(address);
+		TransactionOutput[] outputs = blockchain.findUTXO(address);
+		int balance = 0;
+		if (outputs != null && outputs.length > 0) {
+			for (TransactionOutput output : outputs) {
+				balance += output.getValue();
 			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
+		System.out.printf("Balance of '%s': %d\n", address, balance);
 	}
 
 }
