@@ -1,7 +1,5 @@
 package me.light.blockchain.core;
 
-import me.light.blockchain.util.Base58Check;
-import me.light.blockchain.util.BitcoinAddressUtils;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -10,6 +8,8 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 
 import java.io.ByteArrayOutputStream;
 import java.security.*;
+
+import me.light.blockchain.util.*;
 
 /**
  * 钱包
