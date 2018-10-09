@@ -74,4 +74,24 @@ public class Base58Check {
 			throw new AssertionError(e);
 		}
 	}
+
+	/**
+	 * 将 Base58Check 字符串转化为 byte 数组，并校验其校验码
+	 * 返回的byte数组带有版本号，但不带有校验码
+	 *
+	 * @param s
+	 * @return
+	 */
+	public static byte[] base58ToBytes(String s) {
+		byte[] concat = base58ToRawBytes(s);
+		byte[] data = Arrays.copyOf(concat, concat.length - 4);
+		byte[] hash = Arrays.copyOfRange(concat, concat.length - 4, concat.length);
+		byte[] rehash = Arrays.copyOf(BitcoinAddressUtils.doubleHash(data), 4);
+		if (!Arrays.equals(rehash, hash)) {
+			throw new IllegalArgumentException("Checksum mismatch");
+		}
+		return data;
+	}
+
+
 }

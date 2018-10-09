@@ -7,6 +7,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
 import java.security.*;
 
 import me.light.blockchain.util.*;
@@ -17,7 +18,7 @@ import me.light.blockchain.util.*;
  * @author light.hao
  * @create 2018-09-28-22:23
  */
-public class Wallet {
+public class Wallet implements Serializable {
 
 	//校检码长度
 	private static final int ADDRESS_CHECKSUM_LEN = 4;
@@ -82,7 +83,6 @@ public class Wallet {
 	 * @return
 	 */
 	public KeyPair newECKeyPair() throws Exception {
-
 		//注册BC Provider
 		Security.addProvider(new BouncyCastleProvider());
 		//创建椭圆曲线算法的密钥对生成器，算法为 ECDSA

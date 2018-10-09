@@ -1,8 +1,6 @@
 package me.light.blockchain.core;
 
 import me.light.blockchain.util.BitcoinAddressUtils;
-import org.apache.commons.lang3.ArrayUtils;
-
 import java.util.Arrays;
 
 /**

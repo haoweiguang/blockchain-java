@@ -158,11 +158,11 @@ public class Blockchain {
 	/**
 	 * 从交易输入中查询区块链中所有已被花费了的交易输出
 	 *
-	 * @param address 钱包地址
+	 * @param publicKeyHash 钱包公钥hash
 	 * @return 交易ID以及对应的交易输出下标地址
 	 * @throws Exception
 	 */
-	private Map<String, int[]> getAllSpentTransactionInputs(String address) throws Exception {
+	private Map<String, int[]> getAllSpentTransactionInputs(byte[] publicKeyHash) throws Exception {
 		Map<String, int[]> spentTransactionInputs = new HashMap<>();
 		for (BlockchainIterator blockchainIterator = this.getBlockchainIterator(); blockchainIterator.hashNext(); ) {
 			Block block = blockchainIterator.next();
@@ -172,7 +172,7 @@ public class Blockchain {
 				}
 
 				for (TransactionInput input : transaction.getInputs()) {
-					if (input.canUnlockInputWith(address)) {
+					if (input.usesKey(publicKeyHash)) {
 						String inTransactionId = Hex.encodeHexString(input.getTransactionId());
 						int[] spentOutIndexArray = spentTransactionInputs.get(inTransactionId);
 						if (spentOutIndexArray == null) {
@@ -192,13 +192,13 @@ public class Blockchain {
 	/**
 	 * 查找钱包地址对应的所有未花费的交易
 	 *
-	 * @param address
+	 * @param publicKeyHash
 	 * @return
 	 * @throws Exception
 	 */
-	private Transaction[] findUnspentTransactions(String address) throws Exception {
+	private Transaction[] findUnspentTransactions(byte[] publicKeyHash) throws Exception {
 
-		Map<String, int[]> allSpentTransactionInputs = this.getAllSpentTransactionInputs(address);
+		Map<String, int[]> allSpentTransactionInputs = this.getAllSpentTransactionInputs(publicKeyHash);
 		Transaction[] unspentTransactions = {};
 
 		//再次遍历所有区块中的交易输出
@@ -213,7 +213,7 @@ public class Blockchain {
 						continue;
 					}
 
-					if (transaction.getOutputs()[outIndex].canUnlockOutputWith(address)) {
+					if (transaction.getOutputs()[outIndex].isLockedWithKey(publicKeyHash)) {
 						unspentTransactions = ArrayUtils.add(unspentTransactions, transaction);
 					}
 
@@ -227,12 +227,12 @@ public class Blockchain {
 	/**
 	 * 查找钱包地址对应的所有UTXO
 	 *
-	 * @param address
+	 * @param publicKeyHash
 	 * @return
 	 * @throws Exception
 	 */
-	public TransactionOutput[] findUTXO(String address) throws Exception {
-		Transaction[] unspentTransactions = this.findUnspentTransactions(address);
+	public TransactionOutput[] findUTXO(byte[] publicKeyHash) throws Exception {
+		Transaction[] unspentTransactions = this.findUnspentTransactions(publicKeyHash);
 
 		TransactionOutput[] utxos = {};
 
@@ -242,7 +242,7 @@ public class Blockchain {
 
 		for (Transaction transaction : unspentTransactions) {
 			for (TransactionOutput output : transaction.getOutputs()) {
-				if (output.canUnlockOutputWith(address)) {
+				if (output.isLockedWithKey(publicKeyHash)) {
 					utxos = ArrayUtils.add(utxos, output);
 				}
 			}
@@ -253,12 +253,12 @@ public class Blockchain {
 	/**
 	 * 查找能够花费的交易输出
 	 *
-	 * @param address 钱包地址
-	 * @param amount  支付金额
+	 * @param publicKeyHash 钱包地址hash
+	 * @param amount        支付金额
 	 * @return
 	 */
-	public SpendableOutputResult findSpendableOutputs(String address, int amount) throws Exception {
-		Transaction[] unspentTransactions = this.findUnspentTransactions(address);
+	public SpendableOutputResult findSpendableOutputs(byte[] publicKeyHash, int amount) throws Exception {
+		Transaction[] unspentTransactions = this.findUnspentTransactions(publicKeyHash);
 		int accumulated = 0;
 
 		Map<String, int[]> unspentOutputs = new HashMap<>();
@@ -266,7 +266,7 @@ public class Blockchain {
 			String transactionId = Hex.encodeHexString(transaction.getTransactionId());
 			for (int outputIndex = 0; outputIndex < transaction.getOutputs().length; outputIndex++) {
 				TransactionOutput output = transaction.getOutputs()[outputIndex];
-				if (output.canUnlockOutputWith(address) && accumulated < amount) {
+				if (output.isLockedWithKey(publicKeyHash) && accumulated < amount) {
 					accumulated += output.getValue();
 				}
 
