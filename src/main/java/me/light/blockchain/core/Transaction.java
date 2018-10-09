@@ -185,7 +185,10 @@ public class Transaction {
 		}
 
 		Transaction transaction = new Transaction(null, inputs, outputs);
-		transaction.setTransactionId();
+		transaction.setTransactionId(transaction.hash());
+
+		//进行交易签名
+		blockchain.signTransaction(transaction, wallet.getPrivateKey());
 
 		return transaction;
 	}
@@ -243,7 +246,7 @@ public class Transaction {
 	}
 
 	/**
-	 * 验证交易信息
+	 * 验证交易签名
 	 *
 	 * @param prevTxMap 前面多笔交易集合
 	 * @return

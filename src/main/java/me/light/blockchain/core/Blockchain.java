@@ -4,11 +4,9 @@ import me.light.blockchain.util.RocksDBUtils;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 区块链
@@ -84,6 +82,13 @@ public class Blockchain {
 	 * @param transactions
 	 */
 	public void mineBlock(Transaction[] transactions) throws Exception {
+		//挖矿前，先验证交易记录
+		for (Transaction transaction : transactions) {
+			if (!this.verifyTransaction(transaction)) {
+				throw new Exception("ERROR: Fail to mine block ! Invalid transaction !");
+			}
+		}
+
 		String lastBlockHash = RocksDBUtils.getInstance().getLastBlockHash();
 		if (lastBlockHash == null) {
 			throw new Exception("ERROR: Fail to get last block hash ! ");
@@ -285,4 +290,56 @@ public class Blockchain {
 		return new SpendableOutputResult(accumulated, unspentOutputs);
 	}
 
+
+	/**
+	 * 根据交易id查询交易信息
+	 *
+	 * @param transactionId
+	 * @return
+	 */
+	private Transaction findTransaction(byte[] transactionId) throws Exception {
+		for (BlockchainIterator iterator = this.getBlockchainIterator(); iterator.hashNext(); ) {
+			Block block = iterator.next();
+			for (Transaction transaction : block.getTransactions()) {
+				if (Arrays.equals(transaction.getTransactionId(), transactionId)) {
+					return transaction;
+				}
+			}
+		}
+		throw new Exception("ERROR: Can not found tx by txId ! ");
+	}
+
+
+	/**
+	 * 进行交易签名
+	 *
+	 * @param transaction 交易数据
+	 * @param privateKey  私钥
+	 * @throws Exception
+	 */
+	public void signTransaction(Transaction transaction, BCECPrivateKey privateKey) throws Exception {
+		//先找到这笔新的交易中，交易输入所引用的前面的多笔交易的数据
+		Map<String, Transaction> prevTransactions = new HashMap<>();
+		for (TransactionInput input : transaction.getInputs()) {
+			Transaction prevTransaction = this.findTransaction(input.getTransactionId());
+			prevTransactions.put(Hex.encodeHexString(input.getTransactionId()), prevTransaction);
+		}
+		transaction.sign(privateKey, prevTransactions);
+	}
+
+	/**
+	 * 验证交易
+	 *
+	 * @param transaction 交易数据
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean verifyTransaction(Transaction transaction) throws Exception {
+		Map<String, Transaction> prevTransaction = new HashMap<>();
+		for (TransactionInput txInput : transaction.getInputs()) {
+			Transaction tempTransaction = this.findTransaction(txInput.getTransactionId());
+			prevTransaction.put(Hex.encodeHexString(txInput.getTransactionId()), transaction);
+		}
+		return transaction.verify(prevTransaction);
+	}
 }
