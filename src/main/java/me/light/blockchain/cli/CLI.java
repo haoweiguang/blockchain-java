@@ -2,10 +2,14 @@ package me.light.blockchain.cli;
 
 
 import me.light.blockchain.core.*;
+import me.light.blockchain.util.Base58Check;
 import me.light.blockchain.util.RocksDBUtils;
+import me.light.blockchain.util.WalletUtils;
 import org.apache.commons.cli.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+
+import java.util.Arrays;
 
 /**
  * 程序命令行工具入口
@@ -69,6 +73,8 @@ public class CLI {
 					}
 					this.send(sendFrom, sendTo, Integer.valueOf(sendAmount));
 					break;
+				case "createwallet":
+					this.createWallet();
 				case "printchain":
 					this.printChain();
 					break;
@@ -113,7 +119,10 @@ public class CLI {
 	 */
 	private void getBalance(String address) throws Exception {
 		Blockchain blockchain = Blockchain.newBlockChain(address);
-		TransactionOutput[] txOutputs = blockchain.findUTXO(address);
+		// 得到公钥Hash值
+		byte[] versionedPayload = Base58Check.base58ToBytes(address);
+		byte[] pubKeyHash = Arrays.copyOfRange(versionedPayload, 1, versionedPayload.length);
+		TransactionOutput[] txOutputs = blockchain.findUTXO(pubKeyHash);
 		int balance = 0;
 		if (txOutputs != null && txOutputs.length > 0) {
 			for (TransactionOutput txOutput : txOutputs) {
@@ -162,6 +171,16 @@ public class CLI {
 				System.out.println(block.toString() + ", validate = " + validate);
 			}
 		}
+	}
+
+	/**
+	 * 创建钱包
+	 *
+	 * @throws Exception
+	 */
+	private void createWallet() throws Exception {
+		Wallet wallet = WalletUtils.getInstance().createWallet();
+		System.out.println("wallet address : " + wallet.getAddress());
 	}
 
 }

@@ -1,5 +1,9 @@
 package me.light.blockchain.core;
 
+import me.light.blockchain.util.Base58Check;
+
+import java.util.Arrays;
+
 /**
  * 交易输出
  *
@@ -14,9 +18,9 @@ public class TransactionOutput {
 	private int value;
 
 	/**
-	 * 锁定脚本
+	 * 公钥hash
 	 */
-	private String scriptPubKey;
+	private byte[] publicKeyHash;
 
 
 	public int getValue() {
@@ -27,29 +31,44 @@ public class TransactionOutput {
 		this.value = value;
 	}
 
-	public String getScriptPubKey() {
-		return scriptPubKey;
+	public byte[] getPublicKeyHash() {
+		return publicKeyHash;
 	}
 
-	public void setScriptPubKey(String scriptPubKey) {
-		this.scriptPubKey = scriptPubKey;
+	public void setPublicKeyHash(byte[] publicKeyHash) {
+		this.publicKeyHash = publicKeyHash;
 	}
 
 	public TransactionOutput() {
 	}
 
-	public TransactionOutput(int value, String scriptPubKey) {
+	public TransactionOutput(int value, byte[] publicKeyHash) {
 		this.value = value;
-		this.scriptPubKey = scriptPubKey;
+		this.publicKeyHash = publicKeyHash;
 	}
 
 	/**
-	 * 判断解锁数据能解锁交易输出
+	 * 创建新的交易输出
 	 *
-	 * @param unlockingData
+	 * @param value
+	 * @param address
 	 * @return
 	 */
-	public boolean canUnlockOutputWith(String unlockingData) {
-		return this.getScriptPubKey().endsWith(unlockingData);
+	public static TransactionOutput newTransactionOutput(int value, String address) {
+		byte[] versionedPayload = Base58Check.base58ToRawBytes(address);
+		byte[] publicKeyHash = Arrays.copyOfRange(versionedPayload, 1, versionedPayload.length);
+		return new TransactionOutput(value, publicKeyHash);
 	}
+
+	/**
+	 * 检查交易输出是否能够使用指定的公钥
+	 *
+	 * @param publicKeyHash
+	 * @return
+	 */
+	public boolean isLockedWithKey(byte[] publicKeyHash) {
+		return Arrays.equals(this.getPublicKeyHash(), publicKeyHash);
+	}
+
+
 }

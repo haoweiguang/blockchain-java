@@ -4,11 +4,9 @@ import me.light.blockchain.util.RocksDBUtils;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 区块链
@@ -84,6 +82,13 @@ public class Blockchain {
 	 * @param transactions
 	 */
 	public void mineBlock(Transaction[] transactions) throws Exception {
+		//挖矿前，先验证交易记录
+		for (Transaction transaction : transactions) {
+			if (!this.verifyTransaction(transaction)) {
+				throw new Exception("ERROR: Fail to mine block ! Invalid transaction !");
+			}
+		}
+
 		String lastBlockHash = RocksDBUtils.getInstance().getLastBlockHash();
 		if (lastBlockHash == null) {
 			throw new Exception("ERROR: Fail to get last block hash ! ");
@@ -158,11 +163,11 @@ public class Blockchain {
 	/**
 	 * 从交易输入中查询区块链中所有已被花费了的交易输出
 	 *
-	 * @param address 钱包地址
+	 * @param publicKeyHash 钱包公钥hash
 	 * @return 交易ID以及对应的交易输出下标地址
 	 * @throws Exception
 	 */
-	private Map<String, int[]> getAllSpentTransactionInputs(String address) throws Exception {
+	private Map<String, int[]> getAllSpentTransactionInputs(byte[] publicKeyHash) throws Exception {
 		Map<String, int[]> spentTransactionInputs = new HashMap<>();
 		for (BlockchainIterator blockchainIterator = this.getBlockchainIterator(); blockchainIterator.hashNext(); ) {
 			Block block = blockchainIterator.next();
@@ -172,7 +177,7 @@ public class Blockchain {
 				}
 
 				for (TransactionInput input : transaction.getInputs()) {
-					if (input.canUnlockInputWith(address)) {
+					if (input.usesKey(publicKeyHash)) {
 						String inTransactionId = Hex.encodeHexString(input.getTransactionId());
 						int[] spentOutIndexArray = spentTransactionInputs.get(inTransactionId);
 						if (spentOutIndexArray == null) {
@@ -192,13 +197,13 @@ public class Blockchain {
 	/**
 	 * 查找钱包地址对应的所有未花费的交易
 	 *
-	 * @param address
+	 * @param publicKeyHash
 	 * @return
 	 * @throws Exception
 	 */
-	private Transaction[] findUnspentTransactions(String address) throws Exception {
+	private Transaction[] findUnspentTransactions(byte[] publicKeyHash) throws Exception {
 
-		Map<String, int[]> allSpentTransactionInputs = this.getAllSpentTransactionInputs(address);
+		Map<String, int[]> allSpentTransactionInputs = this.getAllSpentTransactionInputs(publicKeyHash);
 		Transaction[] unspentTransactions = {};
 
 		//再次遍历所有区块中的交易输出
@@ -213,7 +218,7 @@ public class Blockchain {
 						continue;
 					}
 
-					if (transaction.getOutputs()[outIndex].canUnlockOutputWith(address)) {
+					if (transaction.getOutputs()[outIndex].isLockedWithKey(publicKeyHash)) {
 						unspentTransactions = ArrayUtils.add(unspentTransactions, transaction);
 					}
 
@@ -227,12 +232,12 @@ public class Blockchain {
 	/**
 	 * 查找钱包地址对应的所有UTXO
 	 *
-	 * @param address
+	 * @param publicKeyHash
 	 * @return
 	 * @throws Exception
 	 */
-	public TransactionOutput[] findUTXO(String address) throws Exception {
-		Transaction[] unspentTransactions = this.findUnspentTransactions(address);
+	public TransactionOutput[] findUTXO(byte[] publicKeyHash) throws Exception {
+		Transaction[] unspentTransactions = this.findUnspentTransactions(publicKeyHash);
 
 		TransactionOutput[] utxos = {};
 
@@ -242,7 +247,7 @@ public class Blockchain {
 
 		for (Transaction transaction : unspentTransactions) {
 			for (TransactionOutput output : transaction.getOutputs()) {
-				if (output.canUnlockOutputWith(address)) {
+				if (output.isLockedWithKey(publicKeyHash)) {
 					utxos = ArrayUtils.add(utxos, output);
 				}
 			}
@@ -253,12 +258,12 @@ public class Blockchain {
 	/**
 	 * 查找能够花费的交易输出
 	 *
-	 * @param address 钱包地址
-	 * @param amount  支付金额
+	 * @param publicKeyHash 钱包地址hash
+	 * @param amount        支付金额
 	 * @return
 	 */
-	public SpendableOutputResult findSpendableOutputs(String address, int amount) throws Exception {
-		Transaction[] unspentTransactions = this.findUnspentTransactions(address);
+	public SpendableOutputResult findSpendableOutputs(byte[] publicKeyHash, int amount) throws Exception {
+		Transaction[] unspentTransactions = this.findUnspentTransactions(publicKeyHash);
 		int accumulated = 0;
 
 		Map<String, int[]> unspentOutputs = new HashMap<>();
@@ -266,7 +271,7 @@ public class Blockchain {
 			String transactionId = Hex.encodeHexString(transaction.getTransactionId());
 			for (int outputIndex = 0; outputIndex < transaction.getOutputs().length; outputIndex++) {
 				TransactionOutput output = transaction.getOutputs()[outputIndex];
-				if (output.canUnlockOutputWith(address) && accumulated < amount) {
+				if (output.isLockedWithKey(publicKeyHash) && accumulated < amount) {
 					accumulated += output.getValue();
 				}
 
@@ -285,4 +290,56 @@ public class Blockchain {
 		return new SpendableOutputResult(accumulated, unspentOutputs);
 	}
 
+
+	/**
+	 * 根据交易id查询交易信息
+	 *
+	 * @param transactionId
+	 * @return
+	 */
+	private Transaction findTransaction(byte[] transactionId) throws Exception {
+		for (BlockchainIterator iterator = this.getBlockchainIterator(); iterator.hashNext(); ) {
+			Block block = iterator.next();
+			for (Transaction transaction : block.getTransactions()) {
+				if (Arrays.equals(transaction.getTransactionId(), transactionId)) {
+					return transaction;
+				}
+			}
+		}
+		throw new Exception("ERROR: Can not found tx by txId ! ");
+	}
+
+
+	/**
+	 * 进行交易签名
+	 *
+	 * @param transaction 交易数据
+	 * @param privateKey  私钥
+	 * @throws Exception
+	 */
+	public void signTransaction(Transaction transaction, BCECPrivateKey privateKey) throws Exception {
+		//先找到这笔新的交易中，交易输入所引用的前面的多笔交易的数据
+		Map<String, Transaction> prevTransactions = new HashMap<>();
+		for (TransactionInput input : transaction.getInputs()) {
+			Transaction prevTransaction = this.findTransaction(input.getTransactionId());
+			prevTransactions.put(Hex.encodeHexString(input.getTransactionId()), prevTransaction);
+		}
+		transaction.sign(privateKey, prevTransactions);
+	}
+
+	/**
+	 * 验证交易
+	 *
+	 * @param transaction 交易数据
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean verifyTransaction(Transaction transaction) throws Exception {
+		Map<String, Transaction> prevTransaction = new HashMap<>();
+		for (TransactionInput txInput : transaction.getInputs()) {
+			Transaction tempTransaction = this.findTransaction(txInput.getTransactionId());
+			prevTransaction.put(Hex.encodeHexString(txInput.getTransactionId()), transaction);
+		}
+		return transaction.verify(prevTransaction);
+	}
 }

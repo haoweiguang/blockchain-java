@@ -1,5 +1,8 @@
 package me.light.blockchain.core;
 
+import me.light.blockchain.util.BitcoinAddressUtils;
+import java.util.Arrays;
+
 /**
  * 交易输入
  *
@@ -19,9 +22,15 @@ public class TransactionInput {
 	private int transactionOutputIndex;
 
 	/**
-	 * 解锁脚本
+	 * 签名
 	 */
-	private String scriptSig;
+	private byte[] signature;
+
+	/**
+	 * 公钥
+	 */
+	private byte[] publicKey;
+
 
 	public byte[] getTransactionId() {
 		return transactionId;
@@ -39,31 +48,40 @@ public class TransactionInput {
 		this.transactionOutputIndex = transactionOutputIndex;
 	}
 
-	public String getScriptSig() {
-		return scriptSig;
+	public byte[] getSignature() {
+		return signature;
 	}
 
-	public void setScriptSig(String scriptSig) {
-		this.scriptSig = scriptSig;
+	public void setSignature(byte[] signature) {
+		this.signature = signature;
 	}
 
+	public byte[] getPublicKey() {
+		return publicKey;
+	}
+
+	public void setPublicKey(byte[] publicKey) {
+		this.publicKey = publicKey;
+	}
 
 	public TransactionInput() {
 	}
 
-	public TransactionInput(byte[] transactionId, int transactionOutputIndex, String scriptSig) {
+	public TransactionInput(byte[] transactionId, int transactionOutputIndex, byte[] signature, byte[] publicKey) {
 		this.transactionId = transactionId;
 		this.transactionOutputIndex = transactionOutputIndex;
-		this.scriptSig = scriptSig;
+		this.signature = signature;
+		this.publicKey = publicKey;
 	}
 
 	/**
-	 * 判断解锁数据能解锁交易输入
-	 * @param unlockingData
+	 * 检查公钥hash是否用于交易输入
+	 *
+	 * @param publicKeyHash
 	 * @return
 	 */
-	public boolean canUnlockInputWith(String unlockingData) {
-		return this.getScriptSig().endsWith(unlockingData);
+	public boolean usesKey(byte[] publicKeyHash) {
+		byte[] lockingHash = BitcoinAddressUtils.ripeMD160Hash(this.getPublicKey());
+		return Arrays.equals(lockingHash, publicKeyHash);
 	}
-
 }
