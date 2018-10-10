@@ -1,6 +1,7 @@
 package me.light.blockchain.core;
 
 import com.google.common.collect.Lists;
+import lombok.Data;
 import me.light.blockchain.util.ByteUtils;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -12,6 +13,7 @@ import java.util.List;
  * @author light.hao
  * @create 2018-10-10-16:29
  */
+@Data
 public class MerkleTree {
 
 	/**
@@ -25,25 +27,10 @@ public class MerkleTree {
 	private byte[][] leafHashes;
 
 
-	public Node getRoot() {
-		return root;
-	}
-
-	public void setRoot(Node root) {
-		this.root = root;
-	}
-
-	public byte[][] getLeafHashes() {
-		return leafHashes;
-	}
-
-	public void setLeafHashes(byte[][] leafHashes) {
-		this.leafHashes = leafHashes;
-	}
-
 	public MerkleTree(byte[][] leafHashes) {
 		constructTree(leafHashes);
 	}
+
 
 	/**
 	 * 从底部叶子节点开始往上构建整个Merkle Tree
@@ -55,7 +42,37 @@ public class MerkleTree {
 			throw new RuntimeException("ERROR:Fail to construct merkle tree ! leafHashes data invalid ! ");
 		}
 		this.leafHashes = leafHashes;
+		List<Node> parents = bottomLevel(leafHashes);
+		while (parents.size() > 1) {
+			parents = internalLevel(parents);
+		}
+		root = parents.get(0);
+	}
 
+	/**
+	 * 构建一个层级节点
+	 *
+	 * @param children
+	 * @return
+	 */
+	private List<Node> internalLevel(List<Node> children) {
+		List<Node> parents = Lists.newArrayListWithCapacity(children.size() / 2);
+		for (int i = 0; i < children.size() - 1; i += 2) {
+			Node child1 = children.get(i);
+			Node child2 = children.get(i + 1);
+
+			Node parent = constructInternalNode(child1, child2);
+			parents.add(parent);
+		}
+
+		// 内部节点奇数个，只对left节点进行计算
+		if (children.size() % 2 != 0) {
+			Node child = children.get(children.size() - 1);
+			Node parent = constructInternalNode(child, null);
+			parents.add(parent);
+		}
+
+		return parents;
 	}
 
 	/**
@@ -128,34 +145,10 @@ public class MerkleTree {
 		return DigestUtils.sha256(mergedBytes);
 	}
 
-
+	@Data
 	public static class Node {
 		private byte[] hash;
 		private Node left;
 		private Node right;
-
-		public byte[] getHash() {
-			return hash;
-		}
-
-		public void setHash(byte[] hash) {
-			this.hash = hash;
-		}
-
-		public Node getLeft() {
-			return left;
-		}
-
-		public void setLeft(Node left) {
-			this.left = left;
-		}
-
-		public Node getRight() {
-			return right;
-		}
-
-		public void setRight(Node right) {
-			this.right = right;
-		}
 	}
 }
