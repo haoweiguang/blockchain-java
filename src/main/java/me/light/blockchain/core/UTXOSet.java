@@ -31,6 +31,13 @@ public class UTXOSet {
 		this.blockchain = blockchain;
 	}
 
+	public UTXOSet(Blockchain blockchain) {
+		this.blockchain = blockchain;
+	}
+
+	public UTXOSet() {
+	}
+
 	/**
 	 * 重建UTXO池索引
 	 */

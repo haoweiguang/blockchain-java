@@ -82,7 +82,7 @@ public class Blockchain {
 	 *
 	 * @param transactions
 	 */
-	public void mineBlock(Transaction[] transactions) throws Exception {
+	public Block mineBlock(Transaction[] transactions) throws Exception {
 		//挖矿前，先验证交易记录
 		for (Transaction transaction : transactions) {
 			if (!this.verifyTransaction(transaction)) {
@@ -96,6 +96,7 @@ public class Blockchain {
 		}
 		Block block = Block.newBlock(lastBlockHash, transactions);
 		this.addBlock(block);
+		return block;
 	}
 
 	/**
@@ -336,6 +337,9 @@ public class Blockchain {
 	 * @throws Exception
 	 */
 	public boolean verifyTransaction(Transaction transaction) throws Exception {
+		if (transaction.isCoinBase()) {
+			return true;
+		}
 		Map<String, Transaction> prevTransaction = new HashMap<>();
 		for (TransactionInput txInput : transaction.getInputs()) {
 			Transaction tempTransaction = this.findTransaction(txInput.getTransactionId());

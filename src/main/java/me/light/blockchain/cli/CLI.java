@@ -108,7 +108,9 @@ public class CLI {
 	 * @param address
 	 */
 	private void createBlockchain(String address) throws Exception {
-		Blockchain.newBlockChain(address);
+		Blockchain blockchain = Blockchain.newBlockChain(address);
+		UTXOSet utxoSet = new UTXOSet(blockchain);
+		utxoSet.reIndex();
 		System.out.println("Done ! ");
 	}
 
@@ -141,8 +143,12 @@ public class CLI {
 	 */
 	private void send(String from, String to, int amount) throws Exception {
 		Blockchain blockchain = Blockchain.newBlockChain(from);
+		//新交易
 		Transaction transaction = Transaction.newTransaction(from, to, amount, blockchain);
-		blockchain.mineBlock(new Transaction[]{transaction});
+		//奖励
+		Transaction rewardTx = Transaction.newCoinbaseTransaction(from, "");
+		Block newBlock = blockchain.mineBlock(new Transaction[]{transaction, rewardTx});
+		new UTXOSet(blockchain).update(newBlock);
 		RocksDBUtils.getInstance().closeDB();
 		System.out.println("Success!");
 	}

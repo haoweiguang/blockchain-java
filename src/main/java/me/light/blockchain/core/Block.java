@@ -139,9 +139,9 @@ public class Block implements Serializable {
 
 		byte[][] transactionIdArrays = new byte[this.getTransactions().length][];
 		for (int i = 0; i < this.getTransactions().length; i++) {
-			transactionIdArrays[i] = this.getTransactions()[i].getTransactionId();
+			transactionIdArrays[i] = this.getTransactions()[i].hash();
 		}
-		return DigestUtils.sha256(ByteUtils.merge(transactionIdArrays));
+		return new MerkleTree(transactionIdArrays).getRoot().getHash();
 	}
 
 	/**
