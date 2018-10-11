@@ -1,5 +1,6 @@
 package me.light.blockchain.core;
 
+import com.google.common.collect.Maps;
 import me.light.blockchain.util.RocksDBUtils;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.ArrayUtils;
@@ -81,7 +82,7 @@ public class Blockchain {
 	 *
 	 * @param transactions
 	 */
-	public void mineBlock(Transaction[] transactions) throws Exception {
+	public Block mineBlock(Transaction[] transactions) throws Exception {
 		//挖矿前，先验证交易记录
 		for (Transaction transaction : transactions) {
 			if (!this.verifyTransaction(transaction)) {
@@ -95,6 +96,7 @@ public class Blockchain {
 		}
 		Block block = Block.newBlock(lastBlockHash, transactions);
 		this.addBlock(block);
+		return block;
 	}
 
 	/**
@@ -335,11 +337,81 @@ public class Blockchain {
 	 * @throws Exception
 	 */
 	public boolean verifyTransaction(Transaction transaction) throws Exception {
+		if (transaction.isCoinBase()) {
+			return true;
+		}
 		Map<String, Transaction> prevTransaction = new HashMap<>();
 		for (TransactionInput txInput : transaction.getInputs()) {
 			Transaction tempTransaction = this.findTransaction(txInput.getTransactionId());
 			prevTransaction.put(Hex.encodeHexString(txInput.getTransactionId()), transaction);
 		}
 		return transaction.verify(prevTransaction);
+	}
+
+	/**
+	 * 查找所有的未交易输出
+	 *
+	 * @return
+	 */
+	public Map<String, TransactionOutput[]> findAllUTXOs() throws Exception {
+		Map<String, int[]> spentTXOs = this.findAllSpentTxOutputs();
+		Map<String, TransactionOutput[]> allUTXOs = Maps.newHashMap();
+
+		for (BlockchainIterator iterator = this.getBlockchainIterator(); iterator.hashNext(); ) {
+			Block block = iterator.next();
+
+			for (Transaction transaction : block.getTransactions()) {
+				String transactionId = Hex.encodeHexString(transaction.getTransactionId());
+				int[] spentOutIndexArray = spentTXOs.get(transactionId);
+
+				TransactionOutput[] outputs = transaction.getOutputs();
+				for (int index = 0; index < outputs.length; index++) {
+					if (spentOutIndexArray != null && ArrayUtils.contains(spentOutIndexArray, index)) {
+						continue;
+					}
+
+					TransactionOutput[] UTXOArray = allUTXOs.get(transactionId);
+					if (UTXOArray == null) {
+						UTXOArray = new TransactionOutput[]{outputs[index]};
+					} else {
+						UTXOArray = ArrayUtils.add(UTXOArray, outputs[index]);
+					}
+					allUTXOs.put(transactionId, UTXOArray);
+				}
+			}
+		}
+		return allUTXOs;
+	}
+
+	/**
+	 * 查询所有交易输出
+	 *
+	 * @return
+	 * @throws Exception
+	 */
+	private Map<String, int[]> findAllSpentTxOutputs() throws Exception {
+		Map<String, int[]> result = Maps.newHashMap();
+		for (BlockchainIterator iterator = this.getBlockchainIterator(); iterator.hashNext(); ) {
+			Block block = iterator.next();
+
+			for (Transaction transaction : block.getTransactions()) {
+				//coinbase交易直接跳过
+				if (transaction.isCoinBase()) {
+					continue;
+				}
+
+				for (TransactionInput input : transaction.getInputs()) {
+					String inputTxId = Hex.encodeHexString(input.getTransactionId());
+					int[] spentOutIndexArray = result.get(inputTxId);
+					if (spentOutIndexArray == null) {
+						spentOutIndexArray = new int[input.getTransactionOutputIndex()];
+					} else {
+						spentOutIndexArray = ArrayUtils.add(spentOutIndexArray, input.getTransactionOutputIndex());
+					}
+					result.put(inputTxId, spentOutIndexArray);
+				}
+			}
+		}
+		return result;
 	}
 }
