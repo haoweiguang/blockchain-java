@@ -162,8 +162,8 @@ public class Blockchain {
 	 * @return 交易ID以及对应的交易输出下标地址
 	 * @throws Exception
 	 */
-	private Map<String, int[]> getAllSpentTransactionInputs(String address) throws Exception {
-		Map<String, int[]> spentTransactionInputs = new HashMap<>();
+	private Map<String, int[]> getAllSpentTXOs(String address) throws Exception {
+		Map<String, int[]> spentTXOs = new HashMap<>();
 		for (BlockchainIterator blockchainIterator = this.getBlockchainIterator(); blockchainIterator.hashNext(); ) {
 			Block block = blockchainIterator.next();
 			for (Transaction transaction : block.getTransactions()) {
@@ -174,18 +174,18 @@ public class Blockchain {
 				for (TransactionInput input : transaction.getInputs()) {
 					if (input.canUnlockInputWith(address)) {
 						String inTransactionId = Hex.encodeHexString(input.getTransactionId());
-						int[] spentOutIndexArray = spentTransactionInputs.get(inTransactionId);
+						int[] spentOutIndexArray = spentTXOs.get(inTransactionId);
 						if (spentOutIndexArray == null) {
-							spentTransactionInputs.put(inTransactionId, new int[]{input.getTransactionOutputIndex()});
+							spentTXOs.put(inTransactionId, new int[]{input.getTransactionOutputIndex()});
 						} else {
 							spentOutIndexArray = ArrayUtils.add(spentOutIndexArray, input.getTransactionOutputIndex());
-							spentTransactionInputs.put(inTransactionId, spentOutIndexArray);
+							spentTXOs.put(inTransactionId, spentOutIndexArray);
 						}
 					}
 				}
 			}
 		}
-		return spentTransactionInputs;
+		return spentTXOs;
 	}
 
 
@@ -198,7 +198,7 @@ public class Blockchain {
 	 */
 	private Transaction[] findUnspentTransactions(String address) throws Exception {
 
-		Map<String, int[]> allSpentTransactionInputs = this.getAllSpentTransactionInputs(address);
+		Map<String, int[]> allSpentTXOs = this.getAllSpentTXOs(address);
 		Transaction[] unspentTransactions = {};
 
 		//再次遍历所有区块中的交易输出
@@ -207,7 +207,7 @@ public class Blockchain {
 			for (Transaction transaction : block.getTransactions()) {
 				String transactionId = Hex.encodeHexString(transaction.getTransactionId());
 
-				int[] spentOutIndexArray = allSpentTransactionInputs.get(transactionId);
+				int[] spentOutIndexArray = allSpentTXOs.get(transactionId);
 				for (int outIndex = 0; outIndex < transaction.getOutputs().length; outIndex++) {
 					if (spentOutIndexArray != null && ArrayUtils.contains(spentOutIndexArray, outIndex)) {
 						continue;
